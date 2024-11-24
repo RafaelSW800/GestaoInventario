@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 
 const Products = () => {
     const [products, setProducts] = useState([]);
-    const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', image: null });
+    const [newProduct, setNewProduct] = useState({ name: '', price: '', quantity: '', description: '', image: '' });
     const [filter, setFilter] = useState({ name: '', supplier: '' });
     const [sortOrder, setSortOrder] = useState('asc');
+    const [error, setError] = useState('');
 
     useEffect(() => {
         // Aqui você pode buscar produtos de uma API ou de um banco de dados
@@ -16,13 +17,28 @@ const Products = () => {
     };
 
     const handleImageChange = (e: { target: { files: any[]; }; }) => {
-        setNewProduct({ ...newProduct, image: e.target.files[0] });
+        const file = e.target.files[0];
+        if (file) {
+            const imageUrl = URL.createObjectURL(file);
+            setNewProduct({ ...newProduct, image: imageUrl });
+        }
     };
 
     const addProduct = () => {
-        // Aqui você pode adicionar lógica para enviar o novo produto para um servidor
-        setProducts([...products, { ...newProduct, id: products.length + 1 }]);
-        setNewProduct({ name: '', price: '', description: '', image: null });
+        const price = parseFloat(newProduct.price);
+        const quantity = parseInt(newProduct.quantity, 10);
+
+        // Validações
+        if (!newProduct.name || price <= 0 || quantity <= 0 || !newProduct.image) {
+            setError('Por favor, preencha todos os campos corretamente.');
+            return;
+        }
+
+        setError(''); // Limpa o erro se as validações passarem
+
+        // Adiciona o novo produto
+        setProducts([...products, { ...newProduct, id: products.length + 1, price, quantity }]);
+        setNewProduct({ name: '', price: '', quantity: '', description: '', image: '' });
     };
 
     const editProduct = (id: any) => {
@@ -41,8 +57,10 @@ const Products = () => {
     return (
         <div>
             <h1>Cadastro de Produtos</h1>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             <input type="text" name="name" placeholder="Nome" value={newProduct.name} onChange={handleInputChange} />
             <input type="number" name="price" placeholder="Preço" value={newProduct.price} onChange={handleInputChange} />
+            <input type="number" name="quantity" placeholder="Quantidade" value={newProduct.quantity} onChange={handleInputChange} />
             <textarea name="description" placeholder="Descrição" value={newProduct.description} onChange={handleInputChange}></textarea>
             <input type="file" onChange={handleImageChange} />
             <button onClick={addProduct}>Adicionar Produto</button>
@@ -60,8 +78,9 @@ const Products = () => {
                     <li key={product.id}>
                         <h3>{product.name}</h3>
                         <p>Preço: {product.price}</p>
+                        <p>Quantidade: {product.quantity}</p>
                         <p>Descrição: {product.description}</p>
-                        {product.image && <img src={URL.createObjectURL(product.image)} alt={product.name} />}
+                        {product.image && <img src={product.image} alt={product.name} />}
                         <button onClick={() => editProduct(product.id)}>Editar</button>
                         <button onClick={() => deleteProduct(product.id)}>Excluir</button>
                     </li>
